@@ -210,6 +210,20 @@ func ResourceNutanixVirtualMachineV2() *schema.Resource {
 					},
 				},
 			},
+			"project": {
+				Type:     schema.TypeList,
+				Optional: true,
+				Computed: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"ext_id": {
+							Type:     schema.TypeString,
+							Optional: true,
+							Computed: true,
+						},
+					},
+				},
+			},
 			// not present in API reference
 			"availability_zone": {
 				Type:     schema.TypeList,
@@ -1569,6 +1583,9 @@ func ResourceNutanixVirtualMachineV2Create(ctx context.Context, d *schema.Resour
 	if cls, ok := d.GetOk("cluster"); ok {
 		body.Cluster = expandClusterReference(cls)
 	}
+	if cls, ok := d.GetOk("project"); ok {
+		body.Project = expandProjectReference(cls)
+	}
 	if availabilityZone, ok := d.GetOk("availability_zone"); ok {
 		body.AvailabilityZone = expandAvailabilityZoneReference(availabilityZone)
 	}
@@ -1845,6 +1862,9 @@ func ResourceNutanixVirtualMachineV2Read(ctx context.Context, d *schema.Resource
 	if err := d.Set("cluster", flattenClusterReference(getResp.Cluster)); err != nil {
 		return diag.FromErr(err)
 	}
+	if err := d.Set("project", flattenProjectReference(getResp.Project)); err != nil {
+		return diag.FromErr(err)
+	}
 	if err := d.Set("availability_zone", flattenAvailabilityZoneReference(getResp.AvailabilityZone)); err != nil {
 		return diag.FromErr(err)
 	}
@@ -2004,6 +2024,10 @@ func ResourceNutanixVirtualMachineV2Update(ctx context.Context, d *schema.Resour
 	}
 	if d.HasChange("cluster") {
 		updateSpec.Cluster = expandClusterReference(d.Get("cluster"))
+		checkForUpdateParams = true
+	}
+	if d.HasChange("project") {
+		updateSpec.Project = expandProjectReference(d.Get("project"))
 		checkForUpdateParams = true
 	}
 	if d.HasChange("guest_customization") {
@@ -2862,6 +2886,20 @@ func expandClusterReference(pr interface{}) *config.ClusterReference {
 		prI := pr.([]interface{})
 		val := prI[0].(map[string]interface{})
 		ownerRef := &config.ClusterReference{}
+
+		if extID, ok := val["ext_id"]; ok && len(extID.(string)) > 0 {
+			ownerRef.ExtId = utils.StringPtr(extID.(string))
+		}
+		return ownerRef
+	}
+	return nil
+}
+
+func expandProjectReference(pr interface{}) *config.ProjectReference {
+	if pr != nil && len(pr.([]interface{})) > 0 {
+		prI := pr.([]interface{})
+		val := prI[0].(map[string]interface{})
+		ownerRef := &config.ProjectReference{}
 
 		if extID, ok := val["ext_id"]; ok && len(extID.(string)) > 0 {
 			ownerRef.ExtId = utils.StringPtr(extID.(string))
@@ -3767,7 +3805,7 @@ func checkForHotPlugChanges(d *schema.ResourceData) bool {
 		d.HasChange(("num_threads_per_core")) || d.HasChange(("cd_rom")) || d.HasChange(("num_numa_nodes")) ||
 		d.HasChange("cluster") || d.HasChange("is_cpu_passthrough_enabled") || d.HasChange("enabled_cpu_features") ||
 		d.HasChange("is_vcpu_hard_pinning_enabled") || d.HasChange("guest_customization") || d.HasChange("guest_tools") ||
-		d.HasChange("serial_ports") || d.HasChange("gpus") || d.HasChange("boot_config") {
+		d.HasChange("serial_ports") || d.HasChange("gpus") || d.HasChange("boot_config") || d.HasChange("project") {
 		return true
 	}
 	return false

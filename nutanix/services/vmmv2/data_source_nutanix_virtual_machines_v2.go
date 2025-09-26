@@ -191,6 +191,18 @@ func DatasourceNutanixVirtualMachinesV4() *schema.Resource {
 								},
 							},
 						},
+						"project": {
+							Type:     schema.TypeList,
+							Computed: true,
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"ext_id": {
+										Type:     schema.TypeString,
+										Computed: true,
+									},
+								},
+							},
+						},
 						// not present in API reference
 						"availability_zone": {
 							Type:     schema.TypeList,
@@ -1458,6 +1470,9 @@ func flattenVMEntities(vms []config.Vm) []interface{} {
 			}
 			if v.Cluster != nil {
 				vm["cluster"] = flattenClusterReference(v.Cluster)
+			}
+			if v.Project != nil {
+				vm["project"] = flattenProjectReference(v.Project)
 			}
 			if v.GuestCustomization != nil {
 				vm["guest_customization"] = flattenGuestCustomizationParams(v.GuestCustomization)
