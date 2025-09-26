@@ -169,6 +169,18 @@ func DatasourceNutanixVirtualMachineV4() *schema.Resource {
 					},
 				},
 			},
+			"project": {
+				Type:     schema.TypeList,
+				Computed: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"ext_id": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+					},
+				},
+			},
 			// not present in API reference
 			"availability_zone": {
 				Type:     schema.TypeList,
@@ -1386,6 +1398,9 @@ func DatasourceNutanixVirtualMachineV4Read(ctx context.Context, d *schema.Resour
 	if err := d.Set("cluster", flattenClusterReference(getResp.Cluster)); err != nil {
 		return diag.FromErr(err)
 	}
+	if err := d.Set("project", flattenProjectReference(getResp.Project)); err != nil {
+		return diag.FromErr(err)
+	}
 	if err := d.Set("guest_customization", flattenGuestCustomizationParams(getResp.GuestCustomization)); err != nil {
 		return diag.FromErr(err)
 	}
@@ -1568,6 +1583,22 @@ func flattenHostReference(ref *config.HostReference) []map[string]interface{} {
 }
 
 func flattenClusterReference(ref *config.ClusterReference) []map[string]interface{} {
+	if ref != nil {
+		refList := make([]map[string]interface{}, 0)
+
+		refs := make(map[string]interface{})
+
+		if ref.ExtId != nil {
+			refs["ext_id"] = ref.ExtId
+		}
+		refList = append(refList, refs)
+
+		return refList
+	}
+	return nil
+}
+
+func flattenProjectReference(ref *config.ProjectReference) []map[string]interface{} {
 	if ref != nil {
 		refList := make([]map[string]interface{}, 0)
 
