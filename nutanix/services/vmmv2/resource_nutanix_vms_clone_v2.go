@@ -827,6 +827,19 @@ func ResourceNutanixVMCloneV2() *schema.Resource {
 					},
 				},
 			},
+			"project": {
+				Type:     schema.TypeList,
+				Computed: true,
+				Optional: false,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"ext_id": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+					},
+				},
+			},
 			"guest_tools": {
 				Type:     schema.TypeList,
 				Computed: true,
@@ -1565,6 +1578,9 @@ func ResourceNutanixVMCloneV2Read(ctx context.Context, d *schema.ResourceData, m
 		return diag.FromErr(err)
 	}
 	if err := d.Set("cluster", flattenClusterReference(getResp.Cluster)); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("project", flattenProjectReference(getResp.Project)); err != nil {
 		return diag.FromErr(err)
 	}
 	if err := d.Set("guest_customization", flattenGuestCustomizationParams(getResp.GuestCustomization)); err != nil {
